@@ -3,10 +3,12 @@ name: "CodeQL"
 on:
   workflow_dispatch:
   push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+    branches: [ develop_codeql ]
+#    branches: [ main ]
+#  pull_request:
+#    branches: [ main ]
 
+# Cancel in-progress job or run for the current workflow
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -33,21 +35,32 @@ jobs:
     #  run: |
     #    sudo apt install gcc-arm-none-eabi ninja-build cmake
 
-    - name: Cache pack folder
-      id: cache-packs
-      uses: actions/cache@v3
-      with:
-        key: packs-${{ github.run_id }}
-        restore-keys: |
-          packs-
-        path: /tmp/.packs-${{ github.run_id }}
+    - name: Activate vcpkg environment
+      working-directory: Project
+      run: |
+        . <(curl https://aka.ms/vcpkg-init.sh -L)
+        vcpkg activate
+        # Test
+        printenv | sort
+
+    - name: Check environment
+      run: printenv | sort
+
+    #- name: Cache pack folder
+    #  id: cache-packs
+    #  uses: actions/cache@v3
+    #  with:
+    #    key: packs-${{ github.run_id }}
+    #    restore-keys: |
+    #      packs-
+    #    path: /tmp/.packs-${{ github.run_id }}
 
     - name: Initialize packs folder
-      if: steps.cache-packs.outputs.cache-hit != 'true'
+      #if: steps.cache-packs.outputs.cache-hit != 'true'
       run: cpackget init https://www.keil.com/pack/index.pidx
 
     - name: Update pack index
-      if: steps.cache-packs.outputs.cache-hit == 'true'
+      #if: steps.cache-packs.outputs.cache-hit == 'true'
       run: cpackget update-index
     
     - name: Download and install CMSIS packs
@@ -70,9 +83,9 @@ jobs:
         # echo "Install Python requirements"
         # pip install -r requirements.txt
 
-        echo "Activate vcpkg environment"
-        . <(curl https://aka.ms/vcpkg-init.sh -L)
-        vcpkg activate
+        # echo "Activate vcpkg environment"
+        # . <(curl https://aka.ms/vcpkg-init.sh -L)
+        # vcpkg activate
 
         # Download and install CMSIS packs
         #cpackget add -a -f cpacklist.txt || exit 1
